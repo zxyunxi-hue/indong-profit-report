@@ -457,9 +457,9 @@ function showRawByKey(key,panel){
     '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px 20px;margin-bottom:12px;">'+
       '<div style="font-size:10px;letter-spacing:2px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:14px;">매출 및 비용 구조</div>'+
       '<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);">'+
-        '<span style="font-size:12px;color:#3b82f6;font-weight:700;min-width:96px;flex-shrink:0;">매출액(V+)</span>'+
-        '<span style="font-size:13px;font-weight:700;color:#3b82f6;min-width:76px;text-align:right;flex-shrink:0;">'+wonB(tVp)+'</span>'+
-        '<div style="flex:1;background:#f3f4f6;border-radius:4px;height:8px;overflow:hidden;"><div style="width:100%;height:100%;border-radius:4px;background:#3b82f6;opacity:0.7;"></div></div>'+
+        '<span style="font-size:12px;color:#3b82f6;font-weight:700;min-width:90px;flex-shrink:0;">매출액(V+)</span>'+
+        '<span style="font-size:12px;font-weight:700;color:#3b82f6;min-width:120px;text-align:right;flex-shrink:0;">'+wonFull(tVp)+'원</span>'+
+        '<div style="width:180px;flex-shrink:0;background:#f3f4f6;border-radius:4px;height:8px;overflow:hidden;"><div style="width:100%;height:100%;border-radius:4px;background:#3b82f6;opacity:0.7;"></div></div>'+
         '<span style="font-size:11px;color:#3b82f6;min-width:44px;text-align:right;flex-shrink:0;">100%</span>'+
       '</div>'+
       '<div style="height:1px;background:var(--border);margin:8px 0;"></div>'+
@@ -475,9 +475,9 @@ function showRawByKey(key,panel){
       cRow('간접비',tIndirect,'#8b5cf6')+
       '<div style="height:1px;background:var(--border);margin:8px 0;"></div>'+
       '<div style="display:flex;align-items:center;gap:10px;padding:10px 0;">'+
-        '<span style="font-size:13px;font-weight:800;min-width:96px;flex-shrink:0;">영업이익</span>'+
-        '<span style="font-size:15px;font-weight:800;min-width:76px;text-align:right;flex-shrink:0;color:'+(tProfit>=0?'#059669':'#dc2626')+'">'+wonB(tProfit)+'</span>'+
-        '<div style="flex:1;background:#f3f4f6;border-radius:4px;height:10px;overflow:hidden;"><div style="width:'+Math.max(0,Math.min(Math.abs(tProfit/base*100),100))+'%;height:100%;border-radius:4px;background:'+(tProfit>=0?'#059669':'#dc2626')+'"></div></div>'+
+        '<span style="font-size:13px;font-weight:800;min-width:90px;flex-shrink:0;">영업이익</span>'+
+        '<span style="font-size:13px;font-weight:800;min-width:120px;text-align:right;flex-shrink:0;color:'+(tProfit>=0?'#059669':'#dc2626')+'">'+wonFull(tProfit)+'원</span>'+
+        '<div style="width:180px;flex-shrink:0;background:#f3f4f6;border-radius:4px;height:10px;overflow:hidden;"><div style="width:'+Math.max(0,Math.min(Math.abs(tProfit/base*100),100))+'%;height:100%;border-radius:4px;background:'+(tProfit>=0?'#059669':'#dc2626')+'"></div></div>'+
         '<span style="font-size:12px;font-weight:700;min-width:44px;text-align:right;flex-shrink:0;color:'+(tProfit>=0?'#059669':'#dc2626')+'">'+pct(tProfit)+'%</span>'+
       '</div>'+
     '</div>'+
@@ -522,14 +522,33 @@ function renderChannelPanel(){
       if(!bv)return '';
       var bY=bvP>0?(bv-bvP)/bvP*100:null;
       var bm=bv>0?bp/bv*100:null;
-      return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:4px 0;border-bottom:1px solid #f3f4f6;"><span style="color:#6b7280">'+(BRAND_META[b]?BRAND_META[b].ko:b)+'</span><span style="display:flex;align-items:center;gap:6px;">'+yoyIcon(bY,11)+'<span style="font-weight:700;color:'+(bp>=0?'#059669':'#dc2626')+'">'+wonB(bp)+'</span>'+marginBadge(bm)+'</span></div>';
+      return '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;padding:6px 0;border-bottom:1px solid #f3f4f6;">'+
+        '<span style="color:#6b7280;font-weight:600;">'+(BRAND_META[b]?BRAND_META[b].ko:b)+'</span>'+
+        '<span style="display:flex;align-items:center;gap:12px;">'+
+          '<span style="display:flex;flex-direction:column;align-items:flex-end;">'+
+            '<span style="font-size:10px;color:#9ca3af;">매출</span>'+
+            '<span style="display:flex;align-items:center;gap:4px;"><span style="font-weight:700;">'+wonB(bv)+'</span>'+yoyIcon(bY,11)+'</span>'+
+          '</span>'+
+          '<span style="width:1px;height:24px;background:#e8eaf0;flex-shrink:0;"></span>'+
+          '<span style="display:flex;flex-direction:column;align-items:flex-end;">'+
+            '<span style="font-size:10px;color:#9ca3af;">영업이익</span>'+
+            '<span style="display:flex;align-items:center;gap:4px;"><span style="font-weight:700;color:'+(bp>=0?'#059669':'#dc2626')+'">'+wonB(bp)+'</span>'+marginBadge(bm)+'</span>'+
+          '</span>'+
+        '</span>'+
+      '</div>';
     }).join('');
     return '<div class="ch-card" onclick="drillChannel(\''+safe(c)+'\','+ci+')" style="border-top:4px solid '+col+';">'+
       '<div class="ch-name" style="color:'+col+'">'+c+'</div>'+
-      '<div style="display:flex;align-items:baseline;gap:6px;"><div class="ch-total" style="color:'+(vP>=0?col:'#dc2626')+'">'+wonB(vP)+'</div>'+yoyIcon(pyoy,12)+'</div>'+
-      '<div class="ch-sub">영업이익률 '+marginBadge(mr)+' · '+stores+'개 매장 · 1~'+d.sm+'월 누계</div>'+
-      '<div style="margin-top:12px;">'+bRows+'</div>'+
-      '<div style="background:#f3f4f6;border-radius:3px;height:4px;margin-top:12px;overflow:hidden;"><div style="width:'+share+'%;height:100%;background:'+col+';border-radius:3px;"></div></div>'+
+      '<div style="display:flex;gap:12px;margin-bottom:10px;padding-bottom:10px;border-bottom:1px solid #e8eaf0;">'+
+        '<div style="flex:1;"><div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">1~'+d.sm+'월 누계</div><div style="font-size:20px;font-weight:800;color:#6b7280;">'+wonB(v)+'</div></div>'+
+        '<div style="width:1px;background:#e8eaf0;flex-shrink:0;"></div>'+
+        '<div style="flex:1;"><div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">1~'+d.sm+'월 누계 영업이익</div>'+
+          '<div style="display:flex;align-items:baseline;gap:6px;"><div style="font-size:20px;font-weight:800;color:'+(vP>=0?col:'#dc2626')+'">'+wonB(vP)+'</div>'+yoyIcon(pyoy,12)+'</div>'+
+          '<div style="margin-top:2px;">영업이익률 '+marginBadge(mr)+'</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="margin-bottom:8px;">'+bRows+'</div>'+
+      '<div style="background:#f3f4f6;border-radius:3px;height:4px;margin-top:4px;overflow:hidden;"><div style="width:'+share+'%;height:100%;background:'+col+';border-radius:3px;"></div></div>'+
       '<div class="ch-hint">▼ 클릭하면 매장별 상세</div></div>';
   }).join('');
 }
