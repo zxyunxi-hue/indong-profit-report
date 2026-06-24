@@ -448,13 +448,18 @@ function renderBrandPanel(){
       if(!v)return '';
       var cY=vP>0?(v-vP)/vP*100:null;
       var vMargin=v>0?vProfit/v*100:null;
-      return '<div class="bc-ch-row" style="cursor:pointer;" onclick="drillBrandCh(\''+b+'\',\''+c+'\')">'+
+      return '<div class="bc-ch-row" style="cursor:pointer;justify-content:space-between;" onclick="drillBrandCh(\''+b+'\',\''+c+'\')">'+
         '<span class="bc-ch-lbl">'+c+'</span>'+
-        '<span class="bc-ch-vals">'+
-          '<span class="bc-ch-sales" data-val="'+v+'">'+wonB(v)+'</span>'+
-          yoyIcon(cY,11)+
-          '<span class="bc-ch-profit">영업이익 <strong>'+(vProfit<0?'<span style="color:#dc2626">':'<span>')+wonB(vProfit)+'</span></strong></span>'+
-          marginBadge(vMargin)+
+        '<span style="display:flex;gap:16px;align-items:center;">'+
+          '<span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">'+
+            '<span style="font-size:10px;color:#9ca3af;">매출</span>'+
+            '<span style="display:flex;gap:4px;align-items:center;"><span style="font-weight:700;font-size:13px;">'+wonB(v)+'</span>'+yoyIcon(cY,11)+'</span>'+
+          '</span>'+
+          '<span style="width:1px;height:28px;background:#e8eaf0;"></span>'+
+          '<span style="display:flex;flex-direction:column;align-items:flex-end;gap:2px;">'+
+            '<span style="font-size:10px;color:#9ca3af;">영업이익</span>'+
+            '<span style="display:flex;gap:4px;align-items:center;"><span style="font-weight:700;font-size:13px;color:'+(vProfit>=0?'#059669':'#dc2626')+';">'+wonB(vProfit)+'</span>'+marginBadge(vMargin)+'</span>'+
+          '</span>'+
         '</span>'+
       '</div>';
     }).join('');
