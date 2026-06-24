@@ -301,7 +301,9 @@ function renderBrandPanel(){
     var bCur=_accCur.filter(function(r){return r.brand===b;});
     var bPrv=_accPrev.filter(function(r){return r.brand===b;});
     var bS=sum(bCur,'salesVp'),bP=sum(bCur,'profit'),bPP=sum(bPrv,'profit'),bVm=sum(bCur,'salesVm');
+    var bSP=sum(bPrv,'salesVp');
     var share=gS>0?(bS/gS*100).toFixed(1):0;
+    var salesYoy=bSP>0?(bS-bSP)/bSP*100:null;
     var pyoy=bPP!==0?(bP-bPP)/Math.abs(bPP)*100:null;
     var mr=calcMr(bP,bVm,bS);
     var stores=[...new Set(bCur.map(function(r){return r.code||r.store;}))].length;
@@ -330,7 +332,7 @@ function renderBrandPanel(){
         '<div style="flex:1;"><div style="font-size:11px;color:#9ca3af;margin-bottom:4px;">1~'+d.sm+'월 누계 영업손익</div><div style="font-size:22px;font-weight:800;color:'+(bP>=0?col:'#dc2626')+';">'+wonB(bP)+'</div></div>'+
       '</div>'+
       '<div style="display:flex;gap:10px;margin-top:12px;margin-bottom:12px;">'+
-        '<div style="flex:1;background:#f9fafb;border-radius:8px;padding:8px 12px;"><div style="font-size:10px;color:#9ca3af;margin-bottom:3px;">전년대비</div><div style="font-size:15px;font-weight:800;color:'+(pyoy!==null?(pyoy>=0?'#059669':'#dc2626'):'#9ca3af')+'">'+(pyoy!==null?(pyoy>=0?'▲':'▼')+Math.abs(pyoy).toFixed(1)+'%':'-')+'</div></div>'+
+        '<div style="flex:1;background:#f9fafb;border-radius:8px;padding:8px 12px;"><div style="font-size:10px;color:#9ca3af;margin-bottom:3px;">매출 신장률</div><div style="font-size:15px;font-weight:800;color:'+(salesYoy!==null?(salesYoy>=0?'#059669':'#dc2626'):'#9ca3af')+'">'+(salesYoy!==null?(salesYoy>=0?'▲':'▼')+Math.abs(salesYoy).toFixed(1)+'%':'-')+'</div></div>'+
         '<div style="flex:1;background:#f9fafb;border-radius:8px;padding:8px 12px;"><div style="font-size:10px;color:#9ca3af;margin-bottom:3px;">영업이익률</div><div style="font-size:15px;font-weight:800;color:'+(mr!==null&&mr>=0?'#059669':'#dc2626')+'">'+(mr!==null?mr.toFixed(1)+'%':'-')+'</div></div>'+
         '<div style="flex:1;background:#f9fafb;border-radius:8px;padding:8px 12px;"><div style="font-size:10px;color:#9ca3af;margin-bottom:3px;">전년 누계</div><div style="font-size:15px;font-weight:700;color:#6b7280;">'+(bPP?wonB(bPP):'-')+'</div></div>'+
       '</div>'+
