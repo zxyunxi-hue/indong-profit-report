@@ -552,15 +552,73 @@ function getToken(){return localStorage.getItem(TOKEN_KEY)||'';}
 function saveToken(){var t=document.getElementById('token-input').value.trim();if(!t){alert('토큰을 입력해주세요.');return;}localStorage.setItem(TOKEN_KEY,t);document.getElementById('token-section').style.display='none';document.getElementById('reset-token-btn').style.display='';uploadReport();}
 function resetToken(){localStorage.removeItem(TOKEN_KEY);document.getElementById('token-input').value='';document.getElementById('token-section').style.display='';document.getElementById('reset-token-btn').style.display='none';document.getElementById('upload-status').textContent='';document.getElementById('url-box').style.display='none';}
 function shareReport(){var modal=document.getElementById('share-modal');modal.classList.add('show');document.getElementById('url-box').style.display='none';document.getElementById('upload-status').textContent='';document.getElementById('upload-status').className='upload-status';var d=getAcc(_selPeriod);document.getElementById('modal-sub').textContent=d.sy+'년 '+d.sm+'월 누계 보고서 공유';var token=getToken();if(token){document.getElementById('token-section').style.display='none';document.getElementById('reset-token-btn').style.display='';uploadReport();}else{document.getElementById('token-section').style.display='';document.getElementById('reset-token-btn').style.display='none';}}
-async function uploadReport(){var token=getToken(),d=getAcc(_selPeriod),ts=Date.now();var fileName='reports/profit-'+d.sy+'-'+String(d.sm).padStart(2,'0')+'-'+ts+'.html';var pageURL='https://'+GITHUB_OWNER+'.github.io/'+GITHUB_REPO+'/'+fileName;document.getElementById('upload-status').className='upload-status';document.getElementById('upload-status').innerHTML='<span class="spinner"></span> GitHub에 업로드 중...';document.getElementById('url-box').style.display='none';try{var sn={data:_data,brands:_brands,channels:_channels,periods:_periods,selPeriod:_selPeriod};var html='<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><title>인동FN '+d.sy+'년 '+d.sm+'월 영업이익 보고서</title></head><body><p style="padding:40px;">공유 보고서는 로컬 저장 버튼을 이용해주세요. 생성: '+new Date().toLocaleString('ko-KR')+'</p></body></html>';var encoded=btoa(unescape(encodeURIComponent(html)));var sha=null;try{var chk=await fetch('https://api.github.com/repos/'+GITHUB_OWNER+'/'+GITHUB_REPO+'/contents/'+fileName,{headers:{Authorization:'token '+token,Accept:'application/vnd.github.v3+json'}});if(chk.ok){var j=await chk.json();sha=j.sha;}}catch(e){}var body={message:'영업이익 보고서 업로드: '+d.sy+'년 '+d.sm+'월',content:encoded,branch:GITHUB_BRANCH};if(sha)body.sha=sha;var res=await fetch('https://api.github.com/repos/'+GITHUB_OWNER+'/'+GITHUB_REPO+'/contents/'+fileName,{method:'PUT',headers:{Authorization:'token '+token,Accept:'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});if(!res.ok){var e=await res.json();if(res.status===401){localStorage.removeItem(TOKEN_KEY);throw new Error('토큰이 유효하지 않습니다.');}throw new Error(e.message||'업로드 실패');}document.getElementById('upload-status').className='upload-status success';document.getElementById('upload-status').textContent='✅ 업로드 완료!';document.getElementById('share-url').textContent=pageURL;document.getElementById('url-box').style.display='flex';}catch(err){document.getElementById('upload-status').className='upload-status error';document.getElementById('upload-status').textContent='❌ '+err.message;if(err.message.includes('토큰')){document.getElementById('token-section').style.display='';document.getElementById('reset-token-btn').style.display='none';}}}
+async function uploadReport(){
+  var token=getToken(),d=getAcc(_selPeriod),ts=Date.now();
+  var fileName='reports/profit-'+d.sy+'-'+String(d.sm).padStart(2,'0')+'-'+ts+'.html';
+  var pageURL='https://'+GITHUB_OWNER+'.github.io/'+GITHUB_REPO+'/'+fileName;
+  document.getElementById('upload-status').className='upload-status';
+  document.getElementById('upload-status').innerHTML='<span class="spinner"></span> GitHub에 업로드 중...';
+  document.getElementById('url-box').style.display='none';
+  try{
+    var sn={data:_data,brands:_brands,channels:_channels,periods:_periods,selPeriod:_selPeriod};
+    var snStr=JSON.stringify(sn);
+    var html=document.documentElement.outerHTML;
+    var injected=html.replace('<head>','<head><script>window.__INIT_DATA='+snStr+';<\/script>');
+    var encoded=btoa(unescape(encodeURIComponent(injected)));
+    var sha=null;
+    try{var chk=await fetch('https://api.github.com/repos/'+GITHUB_OWNER+'/'+GITHUB_REPO+'/contents/'+fileName,{headers:{Authorization:'token '+token,Accept:'application/vnd.github.v3+json'}});if(chk.ok){var j=await chk.json();sha=j.sha;}}catch(e){}
+    var body={message:'영업이익 보고서 업로드: '+d.sy+'년 '+d.sm+'월',content:encoded,branch:GITHUB_BRANCH};
+    if(sha)body.sha=sha;
+    var res=await fetch('https://api.github.com/repos/'+GITHUB_OWNER+'/'+GITHUB_REPO+'/contents/'+fileName,{method:'PUT',headers:{Authorization:'token '+token,Accept:'application/vnd.github.v3+json','Content-Type':'application/json'},body:JSON.stringify(body)});
+    if(!res.ok){var e=await res.json();if(res.status===401){localStorage.removeItem(TOKEN_KEY);throw new Error('토큰이 유효하지 않습니다.');}throw new Error(e.message||'업로드 실패');}
+    document.getElementById('upload-status').className='upload-status success';
+    document.getElementById('upload-status').textContent='✅ 업로드 완료! (1~2분 후 반영)';
+    document.getElementById('share-url').textContent=pageURL;
+    document.getElementById('url-box').style.display='flex';
+  }catch(err){
+    document.getElementById('upload-status').className='upload-status error';
+    document.getElementById('upload-status').textContent='❌ '+err.message;
+    if(err.message.includes('토큰')){document.getElementById('token-section').style.display='';document.getElementById('reset-token-btn').style.display='none';}
+  }
+}
 function copyURL(){navigator.clipboard.writeText(document.getElementById('share-url').textContent).then(function(){showToast('✅ URL 복사됨!');});}
 function closeModal(){document.getElementById('share-modal').classList.remove('show');}
-function downloadHTML(){var d=getAcc(_selPeriod);var html='<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"/><title>인동FN '+d.sy+'년 '+d.sm+'월 영업이익 보고서</title></head><body><p style="padding:40px;">로컬 저장 파일입니다. 생성: '+new Date().toLocaleString('ko-KR')+'</p></body></html>';var blob=new Blob([html],{type:'text/html;charset=utf-8'});var url=URL.createObjectURL(blob);var a=document.createElement('a');a.href=url;a.download='profit-report-'+d.sy+'-'+String(d.sm).padStart(2,'0')+'.html';document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);showToast('파일 다운로드 완료!');}
+function buildShareHTML(d){
+  var sn={data:_data,brands:_brands,channels:_channels,periods:_periods,selPeriod:_selPeriod};
+  var snB64=btoa(unescape(encodeURIComponent(JSON.stringify(sn))));
+  var srcDoc=document.documentElement.outerHTML;
+  // 데이터 주입: 스크립트 태그 앞에 데이터 삽입
+  var injected=srcDoc.replace('</body>','<script>window.__SN="'+snB64+'";<\/script></body>');
+  return injected;
+}
+function downloadHTML(){
+  var d=getAcc(_selPeriod);
+  var sn={data:_data,brands:_brands,channels:_channels,periods:_periods,selPeriod:_selPeriod};
+  var snStr=JSON.stringify(sn);
+  var html=document.documentElement.outerHTML;
+  // 현재 페이지 HTML 그대로 + 데이터 주입
+  var injected=html.replace('<head>','<head><script>window.__INIT_DATA='+snStr+';<\/script>');
+  var blob=new Blob([injected],{type:'text/html;charset=utf-8'});
+  var url=URL.createObjectURL(blob);var a=document.createElement('a');
+  a.href=url;a.download='profit-report-'+d.sy+'-'+String(d.sm).padStart(2,'0')+'.html';
+  document.body.appendChild(a);a.click();document.body.removeChild(a);URL.revokeObjectURL(url);
+  showToast('파일 다운로드 완료!');
+}
 function resetApp(){_data=[];_brands=[];_channels=[];_periods=[];_accCur=[];_accPrev=[];_drillData={brand:[],ch:[]};document.getElementById('upload-screen').style.display='flex';document.getElementById('report-screen').style.display='none';document.getElementById('file-input').value='';document.getElementById('up-err').innerHTML='';}
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},3500);}
 function showErr(msg){document.getElementById('up-err').innerHTML='<div class="err-box">'+msg+'</div>';}
 
 document.addEventListener('DOMContentLoaded',function(){
+  // 공유 링크로 열린 경우 데이터 자동 로드
+  if(window.__INIT_DATA){
+    var sn=window.__INIT_DATA;
+    _data=sn.data;_brands=sn.brands;_channels=sn.channels;_periods=sn.periods;_selPeriod=sn.selPeriod;
+    _accCur=[];_accPrev=[];
+    document.getElementById('upload-screen').style.display='none';
+    document.getElementById('report-screen').style.display='block';
+    renderAll();
+    return;
+  }
   var dz=document.getElementById('drop-zone'),fi=document.getElementById('file-input');
   dz.addEventListener('dragover',function(e){e.preventDefault();dz.classList.add('drag');});
   dz.addEventListener('dragleave',function(){dz.classList.remove('drag');});
