@@ -491,13 +491,23 @@ function renderBrandPanel(){
   }).join('');
 }
 
+function getMostFrequentName(arr){
+  var freq={};arr.forEach(function(v){freq[v]=(freq[v]||0)+1;});
+  return Object.entries(freq).sort(function(a,b){return b[1]-a[1];})[0][0];
+}
+
 function drillBrandCh(brand,ch){
   var raw=_accCur.filter(function(r){return r.brand===brand&&r.channel===ch;});
   var rawP=_accPrev.filter(function(r){return r.brand===brand&&r.channel===ch;});
-  var stores=[...new Set(raw.map(function(r){return r.store;}))];
-  var rows=stores.map(function(s){
-    var cur=raw.filter(function(r){return r.store===s;});
-    var prev=rawP.filter(function(r){return r.store===s;});
+  var codes=[...new Set(raw.map(function(r){return r.code;}))].filter(Boolean);
+  // 코드 없으면 매장명 기준
+  if(!codes.length) codes=[...new Set(raw.map(function(r){return r.store;}))];
+  var useCode=raw.some(function(r){return r.code;});
+
+  var rows=codes.map(function(c){
+    var cur=useCode?raw.filter(function(r){return r.code===c;}):raw.filter(function(r){return r.store===c;});
+    var prev=useCode?rawP.filter(function(r){return r.code===c;}):rawP.filter(function(r){return r.store===c;});
+    var storeName=getMostFrequentName(cur.map(function(r){return r.store;}));
     var sales=cur.reduce(function(a,r){return a+r.salesVp;},0);
     var profit=cur.reduce(function(a,r){return a+r.profit;},0);
     var prevSales=prev.length?prev.reduce(function(a,r){return a+r.salesVp;},0):null;
@@ -505,23 +515,27 @@ function drillBrandCh(brand,ch){
     var salesYoy=prevSales>0?(sales-prevSales)/prevSales*100:null;
     var profitYoy=prevProfit!==null&&prevProfit!==0?(profit-prevProfit)/Math.abs(prevProfit)*100:null;
     var marginRate=sales>0?profit/sales*100:null;
-    return{store:s,sales:sales,profit:profit,prevSales:prevSales,prevProfit:prevProfit,salesYoy:salesYoy,profitYoy:profitYoy,marginRate:marginRate,rawRows:cur};
+    return{code:c,store:storeName,sales:sales,profit:profit,prevSales:prevSales,prevProfit:prevProfit,salesYoy:salesYoy,profitYoy:profitYoy,marginRate:marginRate};
   }).sort(function(a,b){return b.profit-a.profit;});
 
   var d=getAccData(_selPeriod);
   document.getElementById('brand-drill-title').textContent=brand+' · '+ch+' 매장별 상세 — '+d.selY+'년 1~'+d.selM+'월 누계 ('+rows.length+'개 매장)';
 
-  var h='<thead><tr>'+
-    '<th>#</th><th>매장명</th><th>매출액(V+)</th><th>전년대비(매출)</th><th>증감금액(매출)</th>'+
+  showRawRows(storeName,rows,panel);
+}
+function showRawRows(storeName,rows,panel){
+    '<th>#</th><th>매장코드</th><th>매장명</th><th class="num">매출액(V+)</th><th class="num">전년대비(매출)</th><th class="num">증감금액(매출)</th>'+
     '<th class="num">영업이익</th><th class="num">영업이익률</th><th class="num">전년대비(이익)</th><th class="num">증감금액(이익)</th>'+
   '</tr></thead><tbody>';
 
   rows.forEach(function(r,i){
     var salesAmt=r.prevSales!==null?r.sales-r.prevSales:null;
     var profitAmt=r.prevProfit!==null?r.profit-r.prevProfit:null;
+    var safeCode=r.code.replace(/'/g,"\\'");
     h+='<tr>'+
       '<td style="color:#9ca3af;font-size:12px">'+(i+1)+'</td>'+
-      '<td><span class="store-link" onclick="showRaw(\''+r.store+'\',\'brand\')">'+r.store+'</span></td>'+
+      '<td style="color:#9ca3af;font-size:12px;font-family:monospace;">'+r.code+'</td>'+
+      '<td><span class="store-link" onclick="showRawByCode(\''+safeCode+'\',\'brand\')">'+r.store+'</span></td>'+
       '<td class="num" style="font-weight:600">'+wonFull(r.sales)+'</td>'+
       '<td class="num">'+(r.salesYoy!==null?'<span class="'+(r.salesYoy>=0?'tup':'tdn')+'">'+pctFmt(r.salesYoy)+'</span>':'-')+'</td>'+
       '<td class="num" style="color:'+(salesAmt!==null?(salesAmt>=0?'#059669':'#dc2626'):'#9ca3af')+'">'+(salesAmt!==null?(salesAmt>=0?'+':'')+wonFull(salesAmt):'-')+'</td>'+
@@ -535,7 +549,7 @@ function drillBrandCh(brand,ch){
   var totSales=rows.reduce(function(s,r){return s+r.sales;},0);
   var totProfit=rows.reduce(function(s,r){return s+r.profit;},0);
   var totMargin=totSales>0?totProfit/totSales*100:null;
-  h+='<tr class="tr-tot"><td colspan="2">합계</td><td class="num">'+wonFull(totSales)+'</td><td colspan="2"></td>'+
+  h+='<tr class="tr-tot"><td colspan="3">합계</td><td class="num">'+wonFull(totSales)+'</td><td colspan="2"></td>'+
     '<td class="num" style="color:'+(totProfit>=0?'#059669':'#dc2626')+'">'+wonFull(totProfit)+'</td>'+
     '<td class="num">'+marginBadge(totMargin)+'</td><td colspan="2"></td></tr></tbody>';
 
@@ -543,10 +557,13 @@ function drillBrandCh(brand,ch){
   var dp=document.getElementById('brand-drill');dp.classList.add('on');
   setTimeout(function(){dp.scrollIntoView({behavior:'smooth',block:'nearest'});},50);
   closeRaw();
-
-  window._drillRows=rows;
 }
 
+function showRawByCode(code,panel){
+  var rows=_accCur.filter(function(r){return r.code===code||(!r.code&&r.store===code);}).sort(function(a,b){return a.ym-b.ym;});
+  var storeName=rows.length?getMostFrequentName(rows.map(function(r){return r.store;})):code;
+  showRawRows(storeName,rows,panel);
+}
 function showRaw(storeName,panel){
   var rows=_accCur.filter(function(r){return r.store===storeName;}).sort(function(a,b){return a.ym-b.ym;});
   var h='<thead><tr>'+
