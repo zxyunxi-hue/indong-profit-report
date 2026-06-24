@@ -694,62 +694,89 @@ function showRawByKey(key,panel){
 function drawStoreChart(cid, months, salesData, profitData){
   var canvas=document.getElementById(cid);
   if(!canvas)return;
-  var W=canvas.parentElement.offsetWidth-40, H=180;
+  var W=Math.min(canvas.parentElement.offsetWidth-40, 800), H=180;
   canvas.width=W; canvas.height=H;
-  canvas.style.width='100%';
+  canvas.style.width=W+'px';
   var ctx=canvas.getContext('2d');
-  var pL=54,pR=16,pT=20,pB=36,cW=W-pL-pR,cH=H-pT-pB;
-  var n=months.length;
-  var maxS=Math.max.apply(null,salesData)*1.2||1;
-  var maxP=Math.max.apply(null,profitData.map(Math.abs))*1.6||1;
 
-  function sx(i){return pL+i*(cW/(n>1?n-1:1));}
+  // 1~12월 고정 축
+  var allMonths=['1월','2월','3월','4월','5월','6월','7월','8월','9월','10월','11월','12월'];
+  var salesMap={}, profitMap={};
+  months.forEach(function(m,i){salesMap[m]=salesData[i];profitMap[m]=profitData[i];});
+
+  var pL=54,pR=20,pT=24,pB=32,cW=W-pL-pR,cH=H-pT-pB;
+  var n=12;
+  var maxS=Math.max.apply(null,salesData.concat([0]))*1.25||1;
+  var maxP=Math.max.apply(null,profitData.map(Math.abs).concat([1]))*1.8;
+
+  function sx(i){return pL+i*(cW/(n-1));}
   function sy(v){return pT+cH-(v/maxS*cH);}
   function py(v){return pT+cH/2-(v/maxP*(cH/2));}
 
   ctx.clearRect(0,0,W,H);
-  // grid
+
+  // grid lines
   [0,0.25,0.5,0.75,1].forEach(function(t){
-    var y=pT+cH*t,v=maxS*(1-t);
+    var y=pT+cH*t, v=maxS*(1-t);
     ctx.strokeStyle='#e8eaf0';ctx.lineWidth=1;
     ctx.beginPath();ctx.moveTo(pL,y);ctx.lineTo(W-pR,y);ctx.stroke();
     ctx.fillStyle='#9ca3af';ctx.font='10px sans-serif';ctx.textAlign='right';
     ctx.fillText(v>=1e8?(v/1e8).toFixed(0)+'억':v>=1e4?(v/1e4).toFixed(0)+'만':'0',pL-4,y+3);
   });
+
   // zero line
   ctx.strokeStyle='#d1d5db';ctx.lineWidth=1;ctx.setLineDash([4,3]);
   ctx.beginPath();ctx.moveTo(pL,py(0));ctx.lineTo(W-pR,py(0));ctx.stroke();
   ctx.setLineDash([]);
 
-  // bars
-  var bW=Math.min(32,cW/n*0.5);
-  salesData.forEach(function(v,i){
-    var x=sx(i)-bW/2,y=sy(v),bh=cH-(y-pT);
-    ctx.fillStyle='rgba(59,130,246,0.15)';
-    if(bh>3){ctx.beginPath();ctx.moveTo(x+3,y);ctx.lineTo(x+bW-3,y);ctx.quadraticCurveTo(x+bW,y,x+bW,y+3);ctx.lineTo(x+bW,y+bh);ctx.lineTo(x,y+bh);ctx.lineTo(x,y+3);ctx.quadraticCurveTo(x,y,x+3,y);ctx.closePath();ctx.fill();}
-    else ctx.fillRect(x,y,bW,bh);
+  // 바 (데이터 있는 월만)
+  var bW=Math.max(8, Math.floor(cW/n*0.45));
+  allMonths.forEach(function(m,i){
+    var v=salesMap[m];
+    if(!v)return;
+    var x=sx(i)-bW/2, y=sy(v), bh=cH-(y-pT);
+    ctx.fillStyle='rgba(59,130,246,0.18)';
+    if(bh>3){
+      ctx.beginPath();ctx.moveTo(x+3,y);ctx.lineTo(x+bW-3,y);
+      ctx.quadraticCurveTo(x+bW,y,x+bW,y+3);ctx.lineTo(x+bW,y+bh);
+      ctx.lineTo(x,y+bh);ctx.lineTo(x,y+3);ctx.quadraticCurveTo(x,y,x+3,y);
+      ctx.closePath();ctx.fill();
+    } else ctx.fillRect(x,y,bW,bh);
   });
 
-  // profit line
-  if(n>1){
-    ctx.beginPath();ctx.strokeStyle='#059669';ctx.lineWidth=2.5;
-    profitData.forEach(function(v,i){i===0?ctx.moveTo(sx(i),py(v)):ctx.lineTo(sx(i),py(v));});
-    ctx.stroke();
-  }
-  // dots & labels
-  profitData.forEach(function(v,i){
+  // 영업이익 선 (데이터 있는 월끼리만 연결)
+  var prevIdx=null;
+  allMonths.forEach(function(m,i){
+    if(profitMap[m]===undefined)return;
+    var px2=sx(i), py2=py(profitMap[m]);
+    if(prevIdx!==null){
+      ctx.beginPath();ctx.strokeStyle='#059669';ctx.lineWidth=2.5;
+      ctx.moveTo(sx(prevIdx),py(profitMap[allMonths[prevIdx]]));
+      ctx.lineTo(px2,py2);ctx.stroke();
+    }
+    prevIdx=i;
+  });
+
+  // 점 + 라벨
+  allMonths.forEach(function(m,i){
+    var v=profitMap[m];
+    if(v===undefined)return;
     var dotC=v>=0?'#059669':'#dc2626';
     ctx.beginPath();ctx.arc(sx(i),py(v),4,0,Math.PI*2);
     ctx.fillStyle=dotC;ctx.fill();
     ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
-    var lbl=v>=1e8?(v>=0?'+':'')+( v/1e8).toFixed(1)+'억':v>=1e4?(v>=0?'+':'')+(v/1e4).toFixed(0)+'만':(v>=0?'+':'')+v;
-    ctx.fillStyle=dotC;ctx.font='bold 10px sans-serif';ctx.textAlign='center';
+    var lbl=v>=1e8?(v>=0?'+':'')+( v/1e8).toFixed(1)+'억':v>=1e4?(v>=0?'+':'')+(v/1e4).toFixed(0)+'만':(v>=0?'+':'')+Math.round(v/1e4)+'만';
+    ctx.fillStyle=dotC;ctx.font='bold 9px sans-serif';ctx.textAlign='center';
     ctx.fillText(lbl,sx(i),py(v)+(v>=0?-8:16));
   });
 
-  // x labels
-  ctx.fillStyle='#6b7280';ctx.font='11px sans-serif';ctx.textAlign='center';
-  months.forEach(function(m,i){ctx.fillText(m,sx(i),H-8);});
+  // x축 라벨 (1~12월)
+  ctx.fillStyle='#9ca3af';ctx.font='10px sans-serif';ctx.textAlign='center';
+  allMonths.forEach(function(m,i){
+    // 데이터 있는 월은 진하게
+    ctx.fillStyle=salesMap[m]?'#6b7280':'#d1d5db';
+    ctx.fillText(m,sx(i),H-6);
+  });
 }
 
 function renderChannelPanel(){
