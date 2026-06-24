@@ -214,13 +214,9 @@ tr:hover td{background:#f5f6fa;}
           <span class="drill-close" onclick="closeDrill('brand-drill');closeRaw('raw-panel')">&#10005; 닫기</span>
         </div>
         <div class="tbl-wrap"><table id="brand-drill-tbl"></table></div>
-        <div class="raw-panel" id="raw-panel">
-          <div class="drill-header">
-            <div class="drill-title" id="raw-panel-title"></div>
-            <span class="drill-close" onclick="closeRaw('raw-panel')">&#10005; 닫기</span>
-          </div>
-          <div class="tbl-wrap"><table id="raw-tbl"></table></div>
-        </div>
+      </div>
+      <div class="raw-panel" id="raw-panel">
+        <div class="tbl-wrap"><div id="raw-tbl"></div></div>
       </div>
     </div>
     <div class="panel" id="panel-channel">
@@ -232,13 +228,9 @@ tr:hover td{background:#f5f6fa;}
           <span class="drill-close" onclick="closeDrill('ch-drill');closeRaw('raw-panel-ch')">&#10005; 닫기</span>
         </div>
         <div class="tbl-wrap"><table id="ch-drill-tbl"></table></div>
-        <div class="raw-panel" id="raw-panel-ch">
-          <div class="drill-header">
-            <div class="drill-title" id="raw-panel-ch-title"></div>
-            <span class="drill-close" onclick="closeRaw('raw-panel-ch')">&#10005; 닫기</span>
-          </div>
-          <div class="tbl-wrap"><table id="raw-tbl-ch"></table></div>
-        </div>
+      </div>
+      <div class="raw-panel" id="raw-panel-ch">
+        <div class="tbl-wrap"><div id="raw-tbl-ch"></div></div>
       </div>
     </div>
     <div class="footer">
@@ -668,7 +660,7 @@ function showRawByKey(key,panel){
     }).join('')+
     '</tbody></table>';
 
-  var h='<div style="padding:4px 0 16px;font-size:15px;font-weight:800;">'+nm+' · 상세 분석</div>'+
+  var h='<div style="font-size:15px;font-weight:800;margin-bottom:16px;padding-bottom:12px;border-bottom:1px solid var(--border);">'+nm+' · 상세 분석</div>'+
     '<div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:12px;">'+
       '<div style="font-size:11px;letter-spacing:2px;color:#3b82f6;font-weight:700;text-transform:uppercase;margin-bottom:16px;">월별 매출 · 영업이익 추이</div>'+
       '<canvas id="'+cid+'" height="180"></canvas>'+
@@ -688,12 +680,14 @@ function showRawByKey(key,panel){
     '<button id="'+rawBtnId+'" onclick="toggleRaw(\''+rawId+'\',\''+rawBtnId+'\')" style="width:100%;padding:10px;background:#f9fafb;border:1px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;color:#6b7280;cursor:pointer;text-align:center;margin-bottom:0;">▼ 로우데이터 보기</button>'+
     '<div id="'+rawId+'" style="display:none;margin-top:12px;border-radius:10px;border:1px solid var(--border);overflow-x:auto;">'+rawH+'</div>';
 
-  document.getElementById(rawTitleId).textContent='';
   document.getElementById(rawTblId).innerHTML=h;
-  var rp=document.getElementById(rawPanelId);rp.classList.add('on');
+  var rp=document.getElementById(rawPanelId);
+  rp.classList.add('on');
   setTimeout(function(){
     rp.scrollIntoView({behavior:'smooth',block:'nearest'});
     drawStoreChart(cid, months, salesData, profitData);
+    var rawEl=document.getElementById(rawId);
+    if(rawEl){rawEl.style.display='none';}
   },80);
 }
 
@@ -702,6 +696,7 @@ function drawStoreChart(cid, months, salesData, profitData){
   if(!canvas)return;
   var W=canvas.parentElement.offsetWidth-40, H=180;
   canvas.width=W; canvas.height=H;
+  canvas.style.width='100%';
   var ctx=canvas.getContext('2d');
   var pL=54,pR=16,pT=20,pB=36,cW=W-pL-pR,cH=H-pT-pB;
   var n=months.length;
